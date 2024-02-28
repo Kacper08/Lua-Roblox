@@ -1,0 +1,125 @@
+local FLOOR_HEIGHT = 10
+local NUM_FLOORS = 5
+local ELEVATOR_SPEED = 8
+
+local elevator = script.Parent
+local callButtons = {} -- Table to store call buttons on each floor
+local floorButtons = {} -- Table to store floor buttons inside the elevator
+local floorIndicators = {} -- Table to store floor indicator lights inside the elevator
+local door = elevator:WaitForChild("Door")
+local userInputService = game:GetService("UserInputService")
+
+local currentFloor = 1
+local isMoving = false
+local isDoorClosed = true
+
+local function createButton(name, position, callback)
+    local button = Instance.new("Part")
+    button.Name = name
+    button.Size = Vector3.new(5, 1, 5)
+    button.Position = position
+    button.Anchored = true
+    button.Parent = elevator
+    button.Touched:Connect(callback)
+    return button
+end
+
+local function moveToFloor(floor)
+    if not isMoving then
+        isMoving = true
+        isDoorClosed = true
+        
+        door:FindFirstChild("LeftDoor").Touched:Connect(function() end)
+        door:FindFirstChild("RightDoor").Touched:Connect(function() end)
+        door:FindFirstChild("LeftDoor"):MoveTo(Vector3.new(-5, 0, 0))
+        door:FindFirstChild("RightDoor"):MoveTo(Vector3.new(5, 0, 0))
+
+        wait(1) -- Wait for the door to close
+
+        local targetPosition = Vector3.new(elevator.Position.X, FLOOR_HEIGHT * (floor - 1), elevator.Position.Z)
+        local distance = (elevator.Position - targetPosition).Magnitude
+        local timeToReach = distance / ELEVATOR_SPEED
+
+        elevator:MoveTo(targetPosition)
+        wait(timeToReach)
+
+        door:FindFirstChild("LeftDoor"):MoveTo(Vector3.new(0, 0, 0))
+        door:FindFirstChild("RightDoor"):MoveTo(Vector3.new(0, 0, 0))
+
+        wait(1) -- Wait for the door to open
+
+        isMoving = false
+        currentFloor = floor
+        print("Elevator has reached floor", currentFloor)
+        updateFloorIndicators()
+    end
+end
+
+local function onCallButtonPressed(floor)
+    print("Call button pressed on floor", floor)
+    moveToFloor(floor)
+end
+
+-- Function to handle floor button press
+local function onFloorButtonPressed(floor)
+    print("Floor button pressed inside the elevator for floor", floor)
+    moveToFloor(floor)
+end
+
+local function playArrivalSound()
+    local sound = Instance.new("Sound")
+    sound.SoundId = "rbxassetid://INSERT_SOUND_ID_HERE" -- Replace with your sound ID
+    sound.Parent = elevator
+    sound:Play()
+    wait(sound.TimeLength)
+    sound:Destroy()
+end
+
+local function updateFloorIndicators()
+    for _, indicator in ipairs(floorIndicators) do
+        indicator.BrickColor = currentFloor == indicator.Floor and BrickColor.new("Bright green") or BrickColor.new("Reddish brown")
+    end
+end
+
+local function onInputBegan(input, gameProcessedEvent)
+    if not gameProcessedEvent and input.UserInputType == Enum.UserInputType.MouseButton1 then
+        local mouseHit = userInputService.InputChanged:Wait()
+        local hitPart = mouseHit.UserInputType == Enum.UserInputType.MouseMovement and mouseHit.Target
+
+        for _, callButton in ipairs(callButtons) do
+            if hitPart == callButton then
+                local requestedFloor = tonumber(callButton.Name:match("%d+"))
+                if requestedFloor then
+                    onCallButtonPressed(requestedFloor)
+                    playArrivalSound()
+                end
+            end
+        end
+    end
+end
+
+for floor = 1, NUM_FLOORS do
+    local callButton = createButton("CallButton_" .. floor, Vector3.new(0, FLOOR_HEIGHT * (floor - 1), 0), function()
+        onCallButtonPressed(floor)
+    end)
+    table.insert(callButtons, callButton)
+
+    local floorIndicator = createButton("FloorIndicator_" .. floor, Vector3.new(10, FLOOR_HEIGHT * (floor - 1), 0), function() end)
+    floorIndicator.Color = Color3.new(1, 0, 0)
+    floorIndicator.BrickColor = BrickColor.new("Reddish brown")
+    floorIndicator.Parent = elevator
+    floorIndicator.Floor = floor
+    table.insert(floorIndicators, floorIndicator)
+end
+
+for floor = 1, NUM_FLOORS do
+    local floorButton = createButton("FloorButton_" .. floor, Vector3.new(0, 0, 0), function()
+        onFloorButtonPressed(floor)
+    end)
+    floorButton.Parent = elevator
+    table.insert(floorButtons, floorButton)
+end
+
+userInputService.InputBegan:Connect(onInputBegan)
+
+-- Made by Kax_per08/bln.kacper
