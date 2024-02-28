@@ -65,3 +65,5 @@ for _, outfitInfo in ipairs(outfits) do
         print("Changing outfit to", outfitInfo.Name)
     end)
 end
+
+-- Made by Kax_per08/Bln.kacper
