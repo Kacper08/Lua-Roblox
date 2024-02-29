@@ -1,0 +1,98 @@
+-- Private Chat GUI Script for Roblox Studio
+
+-- Variables
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Create a ScreenGui
+local chatGui = Instance.new("ScreenGui")
+chatGui.Name = "PrivateChatGui"
+chatGui.Parent = playerGui
+
+-- Create a TextBox for input
+local chatInput = Instance.new("TextBox")
+chatInput.Name = "ChatInput"
+chatInput.Size = UDim2.new(0.5, 0, 0, 30)
+chatInput.Position = UDim2.new(0.25, 0, 1, -30)
+chatInput.AnchorPoint = Vector2.new(0.5, 1)
+chatInput.PlaceholderText = "Type here..."
+chatInput.Parent = chatGui
+
+-- Create a TextLabel for displaying messages
+local chatDisplay = Instance.new("TextLabel")
+chatDisplay.Name = "ChatDisplay"
+chatDisplay.Size = UDim2.new(0.8, 0, 0.8, 0)
+chatDisplay.Position = UDim2.new(0.1, 0, 0.1, 0)
+chatDisplay.BackgroundTransparency = 1
+chatDisplay.TextStrokeTransparency = 0.5
+chatDisplay.TextWrapped = true
+chatDisplay.Text = ""
+chatDisplay.Parent = chatGui
+
+-- List of players to choose from
+local players = game.Players:GetPlayers()
+
+-- Create a player list GUI
+local playerListGui = Instance.new("ScreenGui")
+playerListGui.Name = "PlayerListGui"
+playerListGui.Parent = playerGui
+
+-- Create a Frame to hold player buttons
+local playerListFrame = Instance.new("Frame")
+playerListFrame.Name = "PlayerListFrame"
+playerListFrame.Size = UDim2.new(0, 150, 0, 200)
+playerListFrame.Position = UDim2.new(1, -160, 0, 10)
+playerListFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+playerListFrame.BackgroundTransparency = 0.5
+playerListFrame.Parent = playerListGui
+
+-- Function to create a button for each player
+local function createPlayerButton(targetPlayer)
+    local playerButton = Instance.new("TextButton")
+    playerButton.Name = targetPlayer.Name .. "Button"
+    playerButton.Size = UDim2.new(0, 140, 0, 30)
+    playerButton.Position = UDim2.new(0, 5, 0, #playerListFrame:GetChildren() * 35)
+    playerButton.BackgroundColor3 = Color3.new(0.5, 0.5, 0.5)
+    playerButton.Text = targetPlayer.Name
+    playerButton.TextColor3 = Color3.new(1, 1, 1)
+    playerButton.Parent = playerListFrame
+
+    -- Connect button click to initiate private chat
+    playerButton.MouseButton1Click:Connect(function()
+        initiatePrivateChat(targetPlayer)
+    end)
+end
+
+-- Function to handle sending messages
+local function sendMessage(targetPlayer, message)
+    -- Customize this function to send private messages to a server script
+    -- For simplicity, we'll just append the message to the TextLabel
+    local senderName = player.Name
+    local recipientName = targetPlayer.Name
+    chatDisplay.Text = chatDisplay.Text .. "\n" .. senderName .. " to " .. recipientName .. ": " .. message
+end
+
+-- Function to initiate a private chat with a specific player
+local function initiatePrivateChat(targetPlayer)
+    -- Customize this function to handle starting a private chat
+    -- For simplicity, we'll just clear the chat display and set the recipient name
+    chatDisplay.Text = ""
+    chatInput.PlaceholderText = "Private chat with " .. targetPlayer.Name
+    chatInput:CaptureFocus()
+
+    -- Connect input handling function
+    chatInput.FocusLost:Connect(function()
+        local message = chatInput.Text
+        if message ~= "" then
+            sendMessage(targetPlayer, message)
+            chatInput.Text = ""  -- Clear the input after sending the message
+        end
+    end)
+end
+
+-- Populate the player list
+for _, targetPlayer in ipairs(players) do
+    if targetPlayer ~= player then
+        createPlayerButton(targetPlayer)
+    end
+end
