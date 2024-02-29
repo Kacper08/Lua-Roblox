@@ -1,0 +1,138 @@
+local car = script.Parent  -- Assumes the script is a child of the car model
+local chassis = car.Chassis  -- Change this to the actual name of your chassis
+local wheels = car:GetChildren()  -- Assuming wheels are direct children of the car
+local headlights = car.Headlights  -- Change this to the actual name of your headlights part
+local engineSound = car.EngineSound  -- Change this to the actual name of your engine sound part
+
+local maxSpeed = 50  -- Adjust the maximum speed of the car
+local acceleration = 10  -- Adjust the acceleration of the car
+local brakeForce = 5  -- Adjust the braking force
+local turnSpeed = 2  -- Adjust the steering sensitivity
+local suspensionHeight = 2  -- Adjust the suspension height
+
+local isEngineRunning = false
+local isAccelerating = false
+local isBraking = false
+local isTurningLeft = false
+local isTurningRight = false
+
+local function startEngine()
+    isEngineRunning = true
+    engineSound:Play()
+end
+
+local function stopEngine()
+    isEngineRunning = false
+    engineSound:Stop()
+end
+
+local function accelerate()
+    isAccelerating = true
+end
+
+local function brake()
+    isBraking = true
+end
+
+local function turnLeft()
+    isTurningLeft = true
+end
+
+local function turnRight()
+    isTurningRight = true
+end
+
+local function stopAcceleration()
+    isAccelerating = false
+end
+
+local function stopBraking()
+    isBraking = false
+end
+
+local function stopTurningLeft()
+    isTurningLeft = false
+end
+
+local function stopTurningRight()
+    isTurningRight = false
+end
+
+car.UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
+    if not gameProcessedEvent then
+        if input.KeyCode == Enum.KeyCode.E then
+            if isEngineRunning then
+                stopEngine()
+            else
+                startEngine()
+            end
+        elseif isEngineRunning then
+            if input.KeyCode == Enum.KeyCode.W then
+                accelerate()
+            elseif input.KeyCode == Enum.KeyCode.S then
+                brake()
+            elseif input.KeyCode == Enum.KeyCode.A then
+                turnLeft()
+            elseif input.KeyCode == Enum.KeyCode.D then
+                turnRight()
+            end
+        end
+    end
+end)
+
+car.UserInputService.InputEnded:Connect(function(input)
+    if isEngineRunning then
+        if input.KeyCode == Enum.KeyCode.W then
+            stopAcceleration()
+        elseif input.KeyCode == Enum.KeyCode.S then
+            stopBraking()
+        elseif input.KeyCode == Enum.KeyCode.A then
+            stopTurningLeft()
+        elseif input.KeyCode == Enum.KeyCode.D then
+            stopTurningRight()
+        end
+    end
+end)
+
+-- Update function
+local function update()
+    if isEngineRunning then
+        local currentSpeed = chassis.Velocity.magnitude
+        local forwardVector = chassis.CFrame.LookVector
+        local rightVector = chassis.CFrame.RightVector
+
+        if isAccelerating and currentSpeed < maxSpeed then
+            chassis.Velocity = chassis.Velocity + forwardVector * acceleration
+        end
+
+        if isBraking then
+            chassis.Velocity = chassis.Velocity * (1 - brakeForce)
+        end
+
+        local turnDirection = (isTurningRight and 1 or 0) - (isTurningLeft and 1 or 0)
+        local rotationForce = turnDirection * turnSpeed
+        local rotationTorque = Vector3.new(0, rotationForce, 0)
+        chassis:AddTorque(rotationTorque * chassis.Mass)
+
+        if headlights then
+            if isAccelerating or isTurningLeft or isTurningRight then
+                headlights.Brightness = 5
+            else
+                headlights.Brightness = 0
+            end
+        end
+
+        for _, wheel in pairs(wheels) do
+            if wheel:IsA("Wheel") then
+                wheel.MaxSuspensionTravel = suspensionHeight
+                wheel.SuspensionStiffness = 10
+                wheel.SuspensionDamping = 2
+                wheel.SuspensionSpring = 100
+            end
+        end
+    end
+end
+
+game:GetService("RunService").Heartbeat:Connect(update)
+
+-- Made by Kax_per08/Bln.kacper
