@@ -1,0 +1,26 @@
+local Shelf = script.Parent  
+local ItemName = "Item"  
+local teamName = "Staff"  
+
+local function restockShelf(player)
+    if player.Team == game.Teams[teamName] then
+        local playerInventory = player:FindFirstChild("Inventory")
+        
+        if playerInventory then
+            local itemInInventory = playerInventory:FindFirstChild(ItemName)
+            
+            if itemInInventory then
+                itemInInventory.Parent = Shelf
+                print(player.Name .. " restocked the shelf with " .. ItemName)
+            else
+                print("Item not found in player's inventory for restocking.")
+            end
+        else
+            print("Player does not have an inventory!")
+        end
+    else
+        print("Player is not authorized to restock this shelf.")
+    end
+end
+
+Shelf.ProximityPrompt.Triggered:Connect(restockShelf)
