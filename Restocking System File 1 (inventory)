@@ -1,0 +1,15 @@
+game.Players.PlayerAdded:Connect(function(player)
+    local inventory = Instance.new("Folder")
+    inventory.Name = "Inventory"
+    inventory.Parent = player
+    
+    player:GetPropertyChangedSignal("Team"):Connect(function()
+        if player.Team == game.Teams["Staff"] then
+            if not inventory:FindFirstChild("Item") then
+                local item = Instance.new("Part") 
+                item.Name = "Item"  
+                item.Parent = inventory
+            end
+        end
+    end)
+end)
